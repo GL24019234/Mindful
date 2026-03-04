@@ -4,6 +4,8 @@
  */
 
 /* global document, Office, Word */
+import nlp from 'compromise';
+
 
 Office.onReady((info) => {
   if (info.host === Office.HostType.Word) {
