@@ -5,7 +5,7 @@ async function logParagraphStyles() {
         await context.sync();
 
         body.paragraphs.items.forEach(para => {
-            context.load(para, 'text, style');
+            context.load(para, 'text, style, font');
         });
         await context.sync();
 
