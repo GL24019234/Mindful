@@ -1,0 +1,12 @@
+
+
+Color Config Documentation:
+
+headingColors 
+    is the single object everything else reads from. When the user changes a color in the UI, you update this object via setColor and all other modules immediately reflect the change since they import from here.
+getLevel 
+    is what tocGenerator.js and autoDetect.js will call constantly — given a highlight color found on a run or paragraph, it returns which TOC level that corresponds to.
+getColor 
+    is the reverse lookup — useful when you need to apply a highlight for a given level, like in the auto-detection modules.
+getLabel 
+    is for the UI — so you can display "Section", "Point Header", "Sub-point Header" next to each color picker rather than raw level numbers.
