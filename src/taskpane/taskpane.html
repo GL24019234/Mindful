@@ -1,55 +1,345 @@
-<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT License. -->
-<!-- This file shows how to design a first-run page that provides a welcome screen to the user about the features of the add-in. -->
-
 <!DOCTYPE html>
 <html>
-
 <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Contoso Task Pane Add-in</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TOC Generator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <!-- Office JavaScript API -->
-    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 13px;
+      color: #333;
+      background: #fff;
+    }
 
-    <!-- For more information on Fluent UI, visit https://developer.microsoft.com/fluentui#/. -->
-    <link rel="stylesheet" href="https://res-1.cdn.office.net/files/fabric-cdn-prod_20230815.002/office-ui-fabric-core/11.1.0/css/fabric.min.css"/>
+    /* ── Tabs ── */
+    .tab-bar {
+      display: flex;
+      border-bottom: 2px solid #e0e0e0;
+    }
 
-    <!-- Template styles -->
-    <link href="taskpane.css" rel="stylesheet" type="text/css" />
+    .tab-btn {
+      flex: 1;
+      padding: 10px 0;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #777;
+      transition: all 0.15s;
+    }
+
+    .tab-btn.active {
+      color: #0078d4;
+      border-bottom-color: #0078d4;
+      font-weight: 600;
+    }
+
+    .tab-panel {
+      display: none;
+      padding: 16px;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* ── Shared ── */
+    h3 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 9px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      transition: background 0.15s;
+    }
+
+    .btn-primary {
+      background: #0078d4;
+      color: white;
+    }
+
+    .btn-primary:hover { background: #006cbe; }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-secondary:hover { background: #e0e0e0; }
+
+    .btn-danger {
+      background: #fff0f0;
+      color: #c00;
+      border: 1px solid #f5c0c0;
+    }
+
+    .btn-danger:hover { background: #ffe0e0; }
+
+    /* ── Color config ── */
+    .color-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .color-row:last-child { border-bottom: none; }
+
+    .color-label {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .color-label span { font-weight: 600; }
+    .color-label small { color: #888; margin-top: 2px; }
+
+    .swatches {
+      display: flex;
+      gap: 6px;
+    }
+
+    .swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .swatch:hover { transform: scale(1.15); }
+
+    .swatch.selected {
+      border-color: #333;
+      transform: scale(1.15);
+    }
+
+    /* ── Detection toggles ── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .toggle-row:last-child { border-bottom: none; }
+
+    .toggle-info span { font-weight: 600; }
+    .toggle-info small { display: block; color: #888; margin-top: 2px; }
+
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .toggle input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #ccc;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle-slider:before {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .toggle input:checked + .toggle-slider { background: #0078d4; }
+    .toggle input:checked + .toggle-slider:before { transform: translateX(16px); }
+
+    /* ── Preview list ── */
+    .preview-list {
+      list-style: none;
+      margin-top: 12px;
+    }
+
+    .preview-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid #f5f5f5;
+      font-size: 12.5px;
+    }
+
+    .preview-item:last-child { border-bottom: none; }
+
+    .level-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: white;
+      flex-shrink: 0;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .level-1 { background: #0078d4; }
+    .level-2 { background: #5c6bc0; }
+    .level-3 { background: #888; }
+
+    .preview-indent-1 { padding-left: 0; }
+    .preview-indent-2 { padding-left: 16px; }
+    .preview-indent-3 { padding-left: 32px; }
+
+    .preview-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .empty-state {
+      color: #aaa;
+      text-align: center;
+      padding: 24px 0;
+      font-size: 12px;
+    }
+
+    .status {
+      font-size: 12px;
+      color: #0078d4;
+      margin-top: 8px;
+      min-height: 18px;
+    }
+
+    .status.error { color: #c00; }
+    .status.success { color: #107c10; }
+  </style>
 </head>
+<body>
 
-<body class="ms-font-m ms-welcome ms-Fabric">
-    <header class="ms-welcome__header ms-bgColor-neutralLighter">
-        <img width="90" height="90" src="../../assets/logo-filled.png" alt="Contoso" title="Contoso" />
-        <h1 class="ms-font-su">Welcome</h1>
-    </header>
-    <section id="sideload-msg" class="ms-welcome__main">
-        <h2 class="ms-font-xl">Please <a target="_blank" href="https://learn.microsoft.com/office/dev/add-ins/testing/test-debug-office-add-ins#sideload-an-office-add-in-for-testing">sideload</a> your add-in to see app body.</h2>
-    </section>
-    <main id="app-body" class="ms-welcome__main" style="display: none;">
-        <h2 class="ms-font-xl"> Discover what Office Add-ins can do for you today! </h2>
-        <ul class="ms-List ms-welcome__features">
-            <li class="ms-ListItem">
-                <i class="ms-Icon ms-Icon--Ribbon ms-font-xl"></i>
-                <span class="ms-font-m">Achieve more with Office integration</span>
-            </li>
-            <li class="ms-ListItem">
-                <i class="ms-Icon ms-Icon--Unlock ms-font-xl"></i>
-                <span class="ms-font-m">Unlock features and functionality</span>
-            </li>
-            <li class="ms-ListItem">
-                <i class="ms-Icon ms-Icon--Design ms-font-xl"></i>
-                <span class="ms-font-m">Create and visualize like a pro</span>
-            </li>
-        </ul>
-        <p class="ms-font-l">Modify the source files, then click <b>Run</b>.</p>
-        <div role="button" id="run" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
-            <span class="ms-Button-label">Run</span>
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="config">Config</button>
+    <button class="tab-btn" data-tab="detect">Detect</button>
+    <button class="tab-btn" data-tab="generate">Generate</button>
+  </div>
+
+  <!-- Config tab -->
+  <div id="tab-config" class="tab-panel active">
+    <div class="section">
+      <h3>Heading Colors</h3>
+
+      <div class="color-row">
+        <div class="color-label">
+          <span>Section</span>
+          <small>Level 1 heading</small>
         </div>
-        <p><label id="item-subject"></label></p>
-    </main>
-</body>
+        <div class="swatches" data-level="section"></div>
+      </div>
 
+      <div class="color-row">
+        <div class="color-label">
+          <span>Point Header</span>
+          <small>Level 2 heading</small>
+        </div>
+        <div class="swatches" data-level="pointHeader"></div>
+      </div>
+
+      <div class="color-row">
+        <div class="color-label">
+          <span>Sub-point Header</span>
+          <small>Level 3 heading</small>
+        </div>
+        <div class="swatches" data-level="subPoint"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detect tab -->
+  <div id="tab-detect" class="tab-panel">
+    <div class="section">
+      <h3>Detection Methods</h3>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span>Word Styles</span>
+          <small>Heading 1, 2, 3 styles</small>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-style" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span>Bold Text</span>
+          <small>Fully bold paragraphs</small>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-bold" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span>Numbering Patterns</span>
+          <small>I. 1. A. i. a. etc.</small>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-pattern" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-detect">Run Auto-detect</button>
+    <button class="btn btn-danger" id="btn-clear">Clear Highlights</button>
+    <div class="status" id="detect-status"></div>
+  </div>
+
+  <!-- Generate tab -->
+  <div id="tab-generate" class="tab-panel">
+    <div class="section">
+      <h3>Preview</h3>
+      <button class="btn btn-secondary" id="btn-preview">Refresh Preview</button>
+      <ul class="preview-list" id="preview-list">
+        <li class="empty-state">Click refresh to preview detected headings</li>
+      </ul>
+    </div>
+
+    <button class="btn btn-primary" id="btn-generate">Generate TOC</button>
+    <div class="status" id="generate-status"></div>
+  </div>
+
+  <script src="taskpane.js"></script>
+</body>
 </html>
