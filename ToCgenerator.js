@@ -123,7 +123,7 @@ export async function generateTOC(context, body) {
 
   await context.sync();
 }
-```
+/*
 
 ---
 
@@ -138,3 +138,5 @@ Introduction         ← H1 entry
   Methodology        ← H2 entry
 «TOC_START»          ← hidden, end marker
 [rest of document]
+
+*/
