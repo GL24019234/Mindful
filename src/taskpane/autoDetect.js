@@ -86,3 +86,20 @@ export async function runAllDetection(context, body, options = {}) {
   if (useBold)    await detectByBold(context, body);
   if (usePattern) await detectByPattern(context, body);
 }
+export async function clearHighlights(context, body) {
+  context.load(body, 'paragraphs');
+  await context.sync();
+
+  for (const para of body.paragraphs.items) {
+    context.load(para, 'font');
+  }
+  await context.sync();
+
+  for (const para of body.paragraphs.items) {
+    const level = getLevel(para.font.highlightColor);
+    if (level) {
+      para.font.highlightColor = 'None';
+    }
+  }
+  await context.sync();
+}
