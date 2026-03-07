@@ -1,6 +1,6 @@
 import { headingColors, setColor, getLevel, getLabel } from './colorConfig.js';
 import { runAllDetection, clearHighlights } from './autoDetect.js';
-import { generateTOC } from './tocGenerator.js';
+import { generateTOC } from './ToCgenerator.js';
 
 // ── Available Word highlight colors ──────────────────────────────────────────
 
