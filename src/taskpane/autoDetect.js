@@ -1,4 +1,4 @@
-import { headingColors } from './colorConfig.js';
+import { headingColors, getColor } from './colorConfig.js';
 
 // 1. Word styles — Heading 1/2/3
 export async function detectByStyle(context, body) {
@@ -43,12 +43,16 @@ export async function detectByBold(context, body) {
 // 3. Pattern detection — Roman numerals, Arabic numerals, letters followed by period
 export async function detectByPattern(context, body) {
   const patterns = [
-    // Roman numerals:  I. II. III. IV. etc
-    { regex: /^(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII)\./i, color: headingColors.section },
+    // Uppercase Roman numerals: I. II. III. etc
+    { regex: /^(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII)\./, color: headingColors.section },
+    // Lowercase Roman numerals: i. ii. iii. etc
+    { regex: /^(i|ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii)\./, color: headingColors.section },
     // Arabic numerals: 1. 2. 3. etc
     { regex: /^\d+\./, color: headingColors.pointHeader },
-    // Letters:         A. B. C. etc
-    { regex: /^[A-Z]\./, color: headingColors.subPoint }
+    // Uppercase letters: A. B. C. etc
+    { regex: /^[A-Z]\./, color: headingColors.subPoint },
+    // Lowercase letters: a. b. c. etc
+    { regex: /^[a-z]\./, color: headingColors.subPoint }
   ];
 
   for (const para of body.paragraphs.items) {
@@ -61,9 +65,24 @@ export async function detectByPattern(context, body) {
     for (const pattern of patterns) {
       if (pattern.regex.test(text)) {
         para.font.highlightColor = pattern.color;
-        break; // stop at first match
+        break;
       }
     }
   }
   await context.sync();
+}
+
+// Master function — runs all detectors with optional toggles
+export async function runAllDetection(context, body, options = {}) {
+  const {
+    useStyle   = true,
+    useBold    = true,
+    usePattern = true
+  } = options;
+
+  // style runs first — highest priority
+  // bold and pattern will not overwrite an already highlighted paragraph
+  if (useStyle)   await detectByStyle(context, body);
+  if (useBold)    await detectByBold(context, body);
+  if (usePattern) await detectByPattern(context, body);
 }
