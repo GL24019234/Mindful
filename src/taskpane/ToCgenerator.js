@@ -1,4 +1,4 @@
-import { getLevel } from './src/taskpane/colorConfig.js';
+import { getLevel } from './colorConfig.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
