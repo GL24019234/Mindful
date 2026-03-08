@@ -182,4 +182,25 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
 
 Office.onReady(() => {
   buildSwatches();
+  // in taskpane.js, inside Office.onReady
+document.querySelectorAll('.btn-highlight').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const level = btn.dataset.level;
+    const color = headingColors[level];
+
+    await Word.run(async (context) => {
+      const selection = context.document.getSelection();
+      context.load(selection, 'text');
+      await context.sync();
+
+      if (selection.text.trim().length === 0) {
+        setStatus('config-status', 'No text selected.', 'error');
+        return;
+      }
+
+      selection.font.highlightColor = color;
+      await context.sync();
+    });
+  });
+});
 });
