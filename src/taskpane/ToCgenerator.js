@@ -5,43 +5,40 @@ import { getLevel } from './colorConfig.js';
 const TOC_BOOKMARK = '«TOC_START»';
 
 async function clearExistingTOC(context, body) {
-  // Search for the bookmark string we insert as a TOC marker
-  const results = body.search(TOC_BOOKMARK);
-  context.load(results, 'items');
-  await context.sync();
+  try {
+    const results = body.search(TOC_BOOKMARK, { matchCase: true });
+    context.load(results, 'items');
+    await context.sync();
 
-  if (results.items.length === 0) return;
+    if (results.items.length === 0) return;
 
-  // Expand the marked range to cover the entire TOC
-  // The bookmark sits in the first TOC paragraph — get its paragraph
-  const marker = results.items[0];
-  context.load(marker, 'paragraphs');
-  await context.sync();
+    // load all paragraph text before trying to delete
+    const allParas = body.paragraphs;
+    context.load(allParas, 'items');
+    await context.sync();
 
-  // Walk forward through paragraphs deleting them until we hit the end marker
-  const allParas = body.paragraphs;
-  context.load(allParas, 'items');
-  await context.sync();
-
-  for (const para of allParas.items) {
-    context.load(para, 'text');
-  }
-  await context.sync();
-
-  // Collect and delete all paragraphs between TOC markers
-  let inTOC = false;
-  for (const para of allParas.items) {
-    if (para.text.includes(TOC_BOOKMARK)) {
-      inTOC = !inTOC;
-      para.delete();
-      continue;
+    for (const para of allParas.items) {
+      context.load(para, 'text');
     }
-    if (inTOC) para.delete();
+    await context.sync();
+
+    let inTOC = false;
+    for (const para of allParas.items) {
+      if (para.text.includes(TOC_BOOKMARK)) {
+        inTOC = !inTOC;
+        para.delete();
+        continue;
+      }
+      if (inTOC) para.delete();
+    }
+
+    await context.sync();
+
+  } catch (err) {
+    // no existing TOC found — safe to continue
+    console.log('No existing TOC to clear:', err.message);
   }
-
-  await context.sync();
 }
-
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export async function generateTOC(context, body) {
