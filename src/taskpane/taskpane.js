@@ -117,17 +117,21 @@ document.getElementById('btn-preview').addEventListener('click', async () => {
   try {
     await Word.run(async (context) => {
       const body = context.document.body;
-      context.load(body, 'paragraphs');
+
+      // load paragraphs
+      const paragraphs = body.paragraphs;
+      context.load(paragraphs, 'items');
       await context.sync();
 
-      for (const para of body.paragraphs.items) {
-        context.load(para, 'text, font');
+      // load each paragraph's text and font separately
+      for (const para of paragraphs.items) {
+        context.load(para, 'text');
+        context.load(para.font, 'highlightColor');
       }
       await context.sync();
 
       const entries = [];
-
-      for (const para of body.paragraphs.items) {
+      for (const para of paragraphs.items) {
         const level = getLevel(para.font.highlightColor);
         if (level && para.text.trim().length > 0) {
           entries.push({ text: para.text.trim(), level });
@@ -137,7 +141,7 @@ document.getElementById('btn-preview').addEventListener('click', async () => {
       list.innerHTML = '';
 
       if (entries.length === 0) {
-        list.innerHTML = '<li class="empty-state">No highlighted headings found</li>';
+        list.innerHTML = '<li class="empty-state">No highlighted headings found. Run auto-detect or manually highlight headings first.</li>';
         return;
       }
 
